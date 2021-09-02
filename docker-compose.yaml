@@ -1,0 +1,115 @@
+version: "3.8"
+
+
+services:
+
+
+  db:
+
+    image: 'mongo'
+
+    volumes: 
+      - data:/data/db
+
+    ports: 
+      
+      - '27017:27017'
+
+    env_file: 
+      - ./env/mongo.env
+
+    restart: always
+
+ 
+  tendemrint-node:
+
+    image: 'tendermint/tendermint'
+
+    ports: 
+      - '26657:26657'
+      - '26656:26656'
+      - '26650:26650'
+
+    environment: 
+      - TMHOME=/tmp/tendemrint
+
+    volumes: 
+      - ./tmp/tendemrint:/tmp/tendermint:ro
+
+  #  command:  node --proxy-app=tcp://go-app:26657
+
+   
+  
+  go-app:
+
+    build: 
+
+      context: .
+
+      dockerfile: dockerfiles/go.dockerfile
+
+
+    env_file: 
+      - ./ledgermail-core/.env
+
+  #  command: "./LedgerMailCore  main"
+
+
+    expose:  
+      - '26657'
+    
+    volumes: 
+      - logs:/LedgerMailCore/logs
+      
+    depends_on: 
+      - db
+      - tendemrint-node
+
+
+  node-app:
+
+    build: 
+      context: .
+      dockerfile: dockerfiles/node.dockerfile
+
+    env_file: 
+      - ./env/backend.env
+    
+    volumes: 
+      - ./ledgermail-server:/LedgerMailServer
+
+    ports: 
+      - '8080:8080'
+
+    links: 
+      - db
+
+        
+    depends_on:
+      - db
+      - go-app
+
+    restart: always
+
+
+volumes: 
+  data:
+  logs:
+
+
+
+
+
+
+  
+      
+
+
+
+
+
+
+
+
+
+
